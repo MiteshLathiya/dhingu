@@ -3,13 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import FloatingHearts from "@/components/FloatingHearts";
 import HeartCursorTrail from "@/components/HeartCursorTrail";
 import BackgroundMusic from "@/components/BackgroundMusic";
-import LoveProgress from "@/components/LoveProgress";
+import RomanticMessage from "@/components/RomanticMessage";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import GiftBox from "@/components/GiftBox";
 import LoveLetter from "@/components/LoveLetter";
 import MemoryGallery from "@/components/MemoryGallery";
 import HeartCatchGame from "@/components/HeartCatchGame";
-import ReasonsILoveYou from "@/components/ReasonsILoveYou";
 import BirthdayCountdown from "@/components/BirthdayCountdown";
 import FinalSurprise from "@/components/FinalSurprise";
 
@@ -19,7 +18,6 @@ const steps = [
   "letter",
   "gallery",
   "game",
-  "reasons",
   "countdown",
   "finale",
 ] as const;
@@ -35,6 +33,9 @@ const Index = () => {
   const [giftOpened, setGiftOpened] = useState(false);
   const [letterOpened, setLetterOpened] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
+  
+  // Video state for reducing background music volume
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   const goTo = (next: Step) => setStep(next);
 
@@ -53,7 +54,7 @@ const Index = () => {
   // Track game completion
   const handleGameComplete = useCallback(() => {
     setGameCompleted(true);
-    goTo("reasons");
+    goTo("countdown");
   }, []);
 
   // Finale is always unlocked now
@@ -64,14 +65,16 @@ const Index = () => {
       {/* Global Background Effects */}
       <FloatingHearts count={15} sparkles={true} />
       <HeartCursorTrail />
-      <BackgroundMusic />
-
-      {/* Global Progress Tracker */}
-      <LoveProgress
-        giftOpened={giftOpened}
-        letterOpened={letterOpened}
-        gameCompleted={gameCompleted}
+      <BackgroundMusic 
+        src="/assets/music/happy-birthday.mp3"
+        isFinale={step === "finale"}
+        useAmbient={false}
+        autoPlay={true}
+        isReduced={isVideoPlaying}
+        reducedVolume={0.2}
       />
+      {/* Random romantic messages throughout the journey */}
+      <RomanticMessage />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -85,7 +88,11 @@ const Index = () => {
           {step === "welcome" && <WelcomeScreen onStart={() => goTo("gift")} />}
           
           {step === "gift" && (
-            <GiftBox onComplete={handleGiftComplete} />
+            <GiftBox 
+              onComplete={handleGiftComplete}
+              onVideoStart={() => setIsVideoPlaying(true)}
+              onVideoEnd={() => setIsVideoPlaying(false)}
+            />
           )}
           
           {step === "letter" && (
@@ -104,10 +111,6 @@ const Index = () => {
           
           {step === "game" && (
             <HeartCatchGame onComplete={handleGameComplete} />
-          )}
-          
-          {step === "reasons" && (
-            <ReasonsILoveYou onComplete={() => goTo("countdown")} />
           )}
           
           {step === "countdown" && (

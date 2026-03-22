@@ -3,11 +3,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import FloatingHearts from "./FloatingHearts";
 import Cake3D from "./Cake3D";
-import VoiceNote from "./VoiceNote";
+import ScratchCard from "./ScratchCard";
+import { useCandleBlow, useUnlockHeart, useButtonClick } from "../hooks/useSounds";
 
 interface FinalSurpriseProps {
   isUnlocked?: boolean;
 }
+
+// Emotional message for the finale
+const EMOTIONAL_MESSAGE = `You came into my life and changed everything.
+Before you, I didn't know love like this existed.
+You are not just my girlfriend,
+You are my home, my peace, my happiness.
+
+Happy Birthday, My Love.
+— Mitesh`;
+
+// Photo of together (placeholder - replace with actual photo)
+const TOGETHER_PHOTO = "/assets/images/birthday-memory.JPG";
+
+// Background photo for finale
+const FINALE_PHOTO = "/assets/images/TILC5470.JPG";
 
 // Enhanced fireworks system (reduced confetti)
 const launchFirework = (x: number, y: number) => {
@@ -62,8 +78,15 @@ const launchFireworksSequence = () => {
 };
 
 const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
+  // Sound hooks
+  const playCandleBlow = useCandleBlow();
+  const playUnlockHeart = useUnlockHeart();
+  const playClick = useButtonClick();
+
   // Simplified states - no key/lock needed
   const [showCake, setShowCake] = useState(true);
+  const [showScratchCard, setShowScratchCard] = useState(false);
+  const [showFullMessage, setShowFullMessage] = useState(false);
   const [candleBlown, setCandleBlown] = useState(false);
   const confettiIntervalRef = useRef<number | null>(null);
 
@@ -93,11 +116,25 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
     return () => stopFireworks();
   }, [stopFireworks]);
 
-  // Handle candle blown
+  // Handle candle blown - show scratch card first
   const handleCandleBlown = useCallback(() => {
     setCandleBlown(true);
+    // Sound #12 - blowing candle + magical sparkle
+    playCandleBlow();
+    // Show scratch card after a short delay
+    setTimeout(() => setShowScratchCard(true), 1000);
     startFireworks();
-  }, [startFireworks]);
+  }, [startFireworks, playCandleBlow]);
+
+  // Handle scratch card reveal - show final message
+  const handleScratchReveal = useCallback(() => {
+    setShowScratchCard(false);
+    // Sound #15 - unlock heart / success
+    playUnlockHeart();
+    // Show full message after a short delay
+    setTimeout(() => setShowFullMessage(true), 500);
+    startFireworks();
+  }, [startFireworks, playUnlockHeart]);
 
   // Show lock screen if not unlocked through the journey
   if (!isUnlocked) {
@@ -132,8 +169,21 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 relative overflow-hidden">
-      <FloatingHearts count={15} sparkles={true} />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-rose-50 via-pink-50 to-rose-100 px-4 relative overflow-hidden">
+      {/* Background image with low opacity and blur - only show after scratch */}
+      {showFullMessage && (
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-30 blur-sm"
+          style={{
+            backgroundImage: `url(${FINALE_PHOTO})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+      )}
+      
+      {/* More hearts and sparkles for finale */}
+      <FloatingHearts count={25} sparkles={true} />
 
       <AnimatePresence mode="wait">
         {/* Cake Phase - Show directly without key/lock */}
@@ -149,33 +199,36 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
           </motion.div>
         )}
 
-        {/* Final Message */}
-        {candleBlown && (
+        {/* Scratch Card Phase */}
+        {candleBlown && showScratchCard && (
+          <motion.div
+            key="scratch-card"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="z-10"
+          >
+            <ScratchCard onReveal={handleScratchReveal} />
+          </motion.div>
+        )}
+
+        {/* Final Message - Emotional Peak */}
+        {candleBlown && showFullMessage && (
           <motion.div
             key="content"
-            className="z-10 text-center max-w-2xl w-full"
+            className="z-10 text-center max-w-4xl w-full px-4"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
           >
-            {/* Voice Note */}
-            <motion.div
-              className="mb-8"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <VoiceNote />
-            </motion.div>
-
             {/* Animated decorations */}
             <motion.div
-              className="flex justify-center gap-4 mb-6"
+              className="flex justify-center gap-4 mb-8"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              {["🎉", "🎊", "🎂", "🎈", "💕"].map((emoji, i) => (
+              {["🎉", "🎊", "🎂", "🎈", "💕", "🎈", "🎊"].map((emoji, i) => (
                 <motion.span
                   key={i}
                   animate={{
@@ -186,7 +239,7 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
                   transition={{
                     duration: 1.5,
                     repeat: Infinity,
-                    delay: i * 0.2,
+                    delay: i * 0.15,
                   }}
                 >
                   {emoji}
@@ -194,21 +247,67 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
               ))}
             </motion.div>
 
-            {/* Main Birthday Message */}
+            {/* Big Photo Together */}
+            <motion.div
+              className="relative mx-auto mb-8"
+              initial={{ opacity: 0, scale: 0.3, rotate: -5 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: 0.5, duration: 0.8, type: "spring" }}
+            >
+              <div className="relative inline-block">
+                {/* Photo frame with glow */}
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/30">
+                  <img
+                    src={TOGETHER_PHOTO}
+                    alt="Us together"
+                    className="w-64 h-64 md:w-80 md:h-80 object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = "none";
+                      const fallback = target.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = "flex";
+                    }}
+                  />
+                  {/* Fallback emoji when image fails */}
+                  <div
+                    className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-soft-pink to-primary/30 flex items-center justify-center hidden"
+                  >
+                    <span className="text-8xl">💕</span>
+                  </div>
+                </div>
+                {/* Floating hearts around photo */}
+                <motion.span
+                  className="absolute -top-4 -left-4 text-4xl"
+                  animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  💖
+                </motion.span>
+                <motion.span
+                  className="absolute -bottom-2 -right-4 text-3xl"
+                  animate={{ scale: [1, 1.3, 1], rotate: [0, -15, 15, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+                >
+                  💝
+                </motion.span>
+              </div>
+            </motion.div>
+
+            {/* Main Birthday Message - More visible */}
             <motion.h1
-              className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-gradient-rose mb-6"
+              className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-rose-700 mb-8 drop-shadow-md"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.7 }}
             >
               <motion.span
                 animate={{
                   textShadow: [
-                    "0 0 20px hsl(340 60% 65% / 0.5)",
-                    "0 0 40px hsl(340 60% 65% / 0.8)",
-                    "0 0 60px hsl(340 60% 65% / 1)",
-                    "0 0 40px hsl(340 60% 65% / 0.8)",
-                    "0 0 20px hsl(340 60% 65% / 0.5)",
+                    "0 0 20px rgba(219, 39, 119, 0.5)",
+                    "0 0 40px rgba(219, 39, 119, 0.8)",
+                    "0 0 60px rgba(219, 39, 119, 1)",
+                    "0 0 40px rgba(219, 39, 119, 0.8)",
+                    "0 0 20px rgba(219, 39, 119, 0.5)",
                   ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -217,49 +316,78 @@ const FinalSurprise = ({ isUnlocked = true }: FinalSurpriseProps) => {
               </motion.span>
             </motion.h1>
 
-            <motion.p
-              className="text-xl md:text-2xl font-body text-foreground leading-relaxed mb-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-            >
-              You are the most beautiful part of my life.
-            </motion.p>
-
-            <motion.p
-              className="text-2xl md:text-3xl font-display italic text-gradient-rose"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            {/* Long Emotional Message - Dark background for visibility */}
+            <motion.div
+              className="bg-gradient-to-br from-rose-900/80 to-pink-900/80 backdrop-blur-md rounded-2xl p-6 md:p-8 mb-8 border border-pink-400/30 shadow-xl"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
             >
-              Love you forever — Mitesh 💕
-            </motion.p>
+              <motion.p
+                className="text-lg md:text-xl lg:text-2xl font-display leading-relaxed text-pink-100 whitespace-pre-line"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.3 }}
+              >
+                {EMOTIONAL_MESSAGE}
+              </motion.p>
+            </motion.div>
 
-            {/* Floating hearts */}
+            {/* Final signature with extra love */}
             <motion.div
-              className="mt-8 flex justify-center gap-2"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.8, type: "spring" }}
+            >
+              <motion.p
+                className="text-3xl md:text-4xl font-display italic text-rose-700"
+                animate={{
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                Forever yours — Mitesh 🤍
+              </motion.p>
+            </motion.div>
+
+            {/* Floating hearts row */}
+            <motion.div
+              className="mt-10 flex justify-center gap-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.5 }}
+              transition={{ delay: 2 }}
             >
-              {[...Array(7)].map((_, i) => (
+              {[...Array(9)].map((_, i) => (
                 <motion.span
                   key={i}
                   className="text-primary"
                   animate={{
-                    y: [0, -15, 0],
-                    opacity: [0.5, 1, 0.5],
+                    y: [0, -20, 0],
+                    opacity: [0.4, 1, 0.4],
+                    scale: [0.8, 1.2, 0.8],
                   }}
                   transition={{
-                    duration: 1.5,
+                    duration: 2,
                     repeat: Infinity,
-                    delay: i * 0.2,
+                    delay: i * 0.15,
                   }}
-                  style={{ fontSize: 20 + i * 2 }}
+                  style={{ fontSize: 16 + i * 2 }}
                 >
                   ♥
                 </motion.span>
               ))}
+            </motion.div>
+
+            {/* Additional romantic elements */}
+            <motion.div
+              className="mt-8 flex justify-center items-center gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2.5 }}
+            >
+              <span className="text-2xl">💗</span>
+              <span className="text-rose-700 font-display text-lg">You are my everything</span>
+              <span className="text-2xl">💗</span>
             </motion.div>
           </motion.div>
         )}

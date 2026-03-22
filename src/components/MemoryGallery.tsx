@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { useMemoryReveal, useUnlockHeart } from "../hooks/useSounds";
 
 interface Memory {
   id: number;
@@ -41,15 +42,15 @@ const memories: Memory[] = [
     date: "24 September 2023",
     caption: "Our first kiss 💋",
     type: "image",
-    src: "/assets/images/memory3.jpg",
+    src: "/assets/images/first-kiss.JPG",
     placeholder: "💋",
   },
   {
     id: 4,
-    date: "1 January 2024",
-    caption: "New Year together 🎆",
+    date: "23 March 2024",
+    caption: "Birthday Memory",
     type: "image",
-    src: "/assets/images/memory4.jpg",
+    src: "/assets/images/birthday-memory.JPG",
     placeholder: "🎆",
   },
 ];
@@ -66,21 +67,30 @@ const MemoryGallery = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const playMemoryReveal = useMemoryReveal();
+  const playUnlockHeart = useUnlockHeart();
+
   const handleReveal = useCallback(
     (memory: Memory) => {
       if (!revealed.has(memory.id)) {
         const newRevealed = new Set(revealed);
         newRevealed.add(memory.id);
         setRevealed(newRevealed);
+        
+        // Sound #8 - soft emotional piano note/chime
+        playMemoryReveal();
+        
         onReveal(memory.id);
 
         if (newRevealed.size === totalCount) {
+          // Sound #15 - unlock heart / success sound when all revealed
+          playUnlockHeart();
           onAllRevealed();
         }
       }
       setSelectedMemory(memory);
     },
-    [revealed, onReveal, onAllRevealed, totalCount]
+    [revealed, onReveal, onAllRevealed, totalCount, playMemoryReveal, playUnlockHeart]
   );
 
   const handleCloseModal = () => {
@@ -109,7 +119,7 @@ const MemoryGallery = ({
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        Click on a card to reveal our special memories
+        Click on a card to reveal our special memories, Dhingu 💕
       </motion.p>
 
       {/* Progress indicator */}
@@ -206,8 +216,22 @@ const MemoryGallery = ({
                       onError={(e) => {
                         const target = e.currentTarget;
                         target.style.display = "none";
+                        // Show placeholder when image fails to load
+                        const placeholder = target.nextElementSibling as HTMLElement;
+                        if (placeholder) {
+                          placeholder.style.display = "flex";
+                        }
                       }}
                     />
+                    {/* Fallback placeholder */}
+                    <div
+                      className="w-full h-full hidden flex-col items-center justify-center bg-gradient-to-br from-soft-pink to-primary/20 p-8 text-center"
+                    >
+                      <span className="text-6xl mb-4">{memory.placeholder}</span>
+                      <p className="font-body text-muted-foreground text-sm">
+                        {memory.caption}
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
@@ -245,14 +269,15 @@ const MemoryGallery = ({
 
             {/* Content below the card - when revealed */}
             {revealed.has(memory.id) && (
-              <div className="mt-3 text-center p-2">
-                <p className="font-display text-lg text-foreground">
+              <div className="mt-3 text-center p-4 bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100 rounded-xl border border-rose-200 shadow-sm">
+                <p className="font-display text-lg text-rose-700 flex items-center justify-center gap-2">
+                  <span className="text-lg">📅</span>
                   {memory.date}
                 </p>
-                <p className="font-body text-sm text-muted-foreground">
+                <p className="font-body text-sm text-rose-600 mt-2 flex items-center justify-center gap-2">
+                  <span className="text-base">{memory.placeholder}</span>
                   {memory.caption}
                 </p>
-                <p className="mt-1 text-xs text-primary/70">Click to view</p>
               </div>
             )}
           </div>

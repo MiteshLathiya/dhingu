@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLoveLetterOpen, useButtonClick, useRomanticKiss } from "../hooks/useSounds";
 
 interface Props {
   onComplete: () => void;
@@ -9,10 +10,51 @@ const LETTER_TEXT = `Dhingu, you are the most special person in my life.
 I am lucky to have you.
 Happy Birthday my love ❤️`;
 
+// Random romantic messages
+const ROMANTIC_MESSAGES = [
+  "You look very cute today 💕",
+  "I am lucky to have you ❤️",
+  "Don't forget I love you 🤍",
+  "You are my everything 💖",
+  "Every moment with you is special 💝",
+  "I love your smile 😊",
+  "You are my dream come true 🌟",
+  "My heart beats for you 💗",
+];
+
 const LoveLetter = ({ onComplete }: Props) => {
   const [opened, setOpened] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
+  const [showMessage, setShowMessage] = useState(false);
+  const [romanticMessage, setRomanticMessage] = useState("");
+
+  const playLoveLetterOpen = useLoveLetterOpen();
+  const playClick = useButtonClick();
+  const playKiss = useRomanticKiss();
+
+  // Play sound when letter opens
+  const handleOpen = () => {
+    if (!opened) {
+      setOpened(true);
+      // Sound #6 - paper envelope opening + soft heartbeat
+      playLoveLetterOpen();
+    }
+  };
+
+  // Play romantic kiss sound when showing message
+  useEffect(() => {
+    if (opened) {
+      // Show random romantic message after letter opens
+      const randomMsg = ROMANTIC_MESSAGES[Math.floor(Math.random() * ROMANTIC_MESSAGES.length)];
+      setRomanticMessage(randomMsg);
+      setTimeout(() => {
+        setShowMessage(true);
+        // Sound #14 - romantic shimmer sound
+        playKiss();
+      }, 1500);
+    }
+  }, [opened, playKiss]);
 
   useEffect(() => {
     if (!opened) return;
@@ -36,7 +78,7 @@ const LoveLetter = ({ onComplete }: Props) => {
           <motion.div
             key="envelope"
             className="cursor-pointer flex flex-col items-center"
-            onClick={() => setOpened(true)}
+            onClick={handleOpen}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, rotateX: 90 }}
@@ -70,6 +112,28 @@ const LoveLetter = ({ onComplete }: Props) => {
                 <span className="inline-block w-0.5 h-5 bg-primary ml-1 animate-pulse" />
               )}
             </p>
+            
+            {/* Random Romantic Message Popup */}
+            <AnimatePresence>
+              {showMessage && (
+                <motion.div
+                  className="mt-4 p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg"
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <motion.p
+                    className="text-sm font-body text-pink-700 dark:text-pink-300 italic"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    {romanticMessage} 💘
+                  </motion.p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
             {typingDone && (
               <motion.div
                 className="mt-6 text-right"
@@ -80,7 +144,10 @@ const LoveLetter = ({ onComplete }: Props) => {
                 <p className="font-display italic text-muted-foreground">With all my love,</p>
                 <p className="font-display text-xl text-gradient-rose font-bold">Mitesh ❤️</p>
                 <motion.button
-                  onClick={onComplete}
+                  onClick={() => {
+                    playClick(); // Sound #2 - soft warm UI click
+                    onComplete();
+                  }}
                   className="mt-6 px-6 py-3 rounded-full bg-primary text-primary-foreground font-body font-semibold glow-pink"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

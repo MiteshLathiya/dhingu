@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import FloatingHearts from "./FloatingHearts";
+import { useWelcomeScreen, useButtonClick } from "../hooks/useSounds";
 
 interface Props {
   onStart: () => void;
@@ -17,6 +19,19 @@ const Sparkle = ({ delay, x, y }: { delay: number; x: string; y: string }) => (
 );
 
 const WelcomeScreen = ({ onStart }: Props) => {
+  const playWelcome = useWelcomeScreen();
+  const playClick = useButtonClick();
+
+  // Play welcome screen sound on mount (sound #1 - magical sparkle chime)
+  useEffect(() => {
+    playWelcome();
+  }, [playWelcome]);
+
+  const handleStart = () => {
+    playClick(); // Sound #2 - soft warm UI click
+    onStart();
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background px-4">
       <FloatingHearts count={20} />
@@ -42,10 +57,10 @@ const WelcomeScreen = ({ onStart }: Props) => {
           animate={{ scale: [1, 1.15, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         >
-          ❤️
+          🤍
         </motion.div>
         <h1 className="text-4xl md:text-6xl font-display font-bold text-gradient-rose mb-4">
-          Hey Dhingu ❤️
+          Hey Dhingu 🤍
         </h1>
         <motion.p
           className="text-lg md:text-xl text-muted-foreground font-body mb-10"
@@ -57,7 +72,7 @@ const WelcomeScreen = ({ onStart }: Props) => {
         </motion.p>
 
         <motion.button
-          onClick={onStart}
+          onClick={handleStart}
           className="px-8 py-4 rounded-full bg-primary text-primary-foreground font-body font-semibold text-lg glow-pink hover:scale-105 transition-transform"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}

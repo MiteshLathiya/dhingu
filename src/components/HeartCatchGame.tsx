@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useHeartCatch, useGameComplete } from "../hooks/useSounds";
 
 interface Props {
   onComplete: () => void;
@@ -15,6 +16,9 @@ const HeartCatchGame = ({ onComplete }: Props) => {
   const [hearts, setHearts] = useState<GameHeart[]>([]);
   const [caught, setCaught] = useState(0);
   const TARGET = 5;
+
+  const playHeartCatch = useHeartCatch();
+  const playGameComplete = useGameComplete();
 
   const spawnHeart = useCallback(() => {
     const heart: GameHeart = {
@@ -33,11 +37,15 @@ const HeartCatchGame = ({ onComplete }: Props) => {
 
   useEffect(() => {
     if (caught >= TARGET) {
+      // Sound #10 - soft success chime with sparkles
+      playGameComplete();
       setTimeout(onComplete, 1500);
     }
-  }, [caught, onComplete]);
+  }, [caught, onComplete, playGameComplete]);
 
   const catchHeart = (id: number) => {
+    // Sound #9 - cute pop when collecting heart
+    playHeartCatch();
     setHearts((prev) => prev.filter((h) => h.id !== id));
     setCaught((c) => c + 1);
   };
@@ -49,7 +57,7 @@ const HeartCatchGame = ({ onComplete }: Props) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        {caught >= TARGET ? "You did it! 🎉" : "Catch 5 Hearts! 💕"}
+        {caught >= TARGET ? "You did it, Dhingu! 🎉" : "Catch 5 Hearts for Dhingu! 💕"}
       </motion.h2>
 
       <div className="text-xl font-body text-muted-foreground mb-8 z-10">

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useCountdownTick, useButtonClick } from "../hooks/useSounds";
 
 interface Props {
   onComplete: () => void;
@@ -9,21 +10,38 @@ const BIRTHDAY = new Date("2026-03-23T00:00:00");
 
 const BirthdayCountdown = ({ onComplete }: Props) => {
   const [time, setTime] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const prevSecondsRef = useRef(-1);
+
+  const playTick = useCountdownTick();
+  const playClick = useButtonClick();
 
   useEffect(() => {
     const update = () => {
       const diff = Math.max(0, BIRTHDAY.getTime() - Date.now());
-      setTime({
+      const newTime = {
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
         minutes: Math.floor((diff % 3600000) / 60000),
         seconds: Math.floor((diff % 60000) / 1000),
-      });
+      };
+      
+      // Play tick sound when seconds change (sound #11 - soft minimal digital tick)
+      if (prevSecondsRef.current !== newTime.seconds) {
+        prevSecondsRef.current = newTime.seconds;
+        playTick();
+      }
+      
+      setTime(newTime);
     };
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [playTick]);
+
+  const handleComplete = () => {
+    playClick(); // Sound #2 - soft warm UI click
+    onComplete();
+  };
 
   const units = [
     { label: "Days", value: time.days },
@@ -39,7 +57,7 @@ const BirthdayCountdown = ({ onComplete }: Props) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        Counting Down to Your Day 🎂
+        Counting Down to Your Day, Dhingu 🎂
       </motion.h2>
       <motion.p
         className="text-muted-foreground font-body mb-10"
@@ -47,7 +65,7 @@ const BirthdayCountdown = ({ onComplete }: Props) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        March 23, 2026
+        March 23, 2026 — My love ❤️
       </motion.p>
 
       <div className="flex gap-4 md:gap-6">
@@ -74,7 +92,7 @@ const BirthdayCountdown = ({ onComplete }: Props) => {
       </div>
 
       <motion.button
-        onClick={onComplete}
+        onClick={handleComplete}
         className="mt-10 px-6 py-3 rounded-full bg-primary text-primary-foreground font-body font-semibold glow-pink"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
