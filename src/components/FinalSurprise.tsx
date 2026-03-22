@@ -16,8 +16,7 @@ Before you, I didn't know love like this existed.
 You are not just my girlfriend,
 You are my home, my peace, my happiness.
 
-Happy Birthday, My Love.
-— Mitesh`;
+Wish you very very Happy Birthday, My Love. 🤍`;
 
 // Photo of together (placeholder - replace with actual photo)
 const TOGETHER_PHOTO = "/assets/images/birthday-memory.JPG";
